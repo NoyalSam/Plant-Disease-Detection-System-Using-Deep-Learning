@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mango Disease Detector</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f7ff;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #4b236b;
+            margin-bottom: 30px;
+        }
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .upload-section:hover {
+            border-color: #4b236b;
+        }
+        #fileInput {
+            display: none;
+        }
+        .upload-btn {
+            background-color: #4b236b;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 15px 0;
+            transition: background-color 0.3s ease;
+        }
+        .upload-btn:hover {
+            background-color: #371953;
+        }
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        .result-section {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result-healthy {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result-disease {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4b236b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0ebf8;
+            border-radius: 8px;
+        }
+        .info-section h3 {
+            color: #4b236b;
+            margin-top: 0;
+        }
+        .confidence {
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+        .disease-info {
+            text-align: left;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f5f5f5;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mango Disease Detector</h1>
+        
+        <div class="upload-section" id="dropZone">
+            <p>Upload a mango leaf image for disease detection</p>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="upload-btn" id="uploadBtn">Choose File</button>
+            <p id="fileName">No file chosen</p>
+            <img id="imagePreview" src="#" alt="Image Preview">
+            <div class="loader" id="loader"></div>
+        </div>
+        
+        <div class="result-section" id="resultSection">
+            <h2>Analysis Result</h2>
+            <h3 id="prediction"></h3>
+            <p class="confidence" id="confidence"></p>
+            <div class="disease-info" id="diseaseInfo"></div>
+        </div>
+
+        <div class="info-section">
+            <h3>How It Works</h3>
+            <p>This tool uses a deep learning model trained to detect various mango leaf diseases. Upload a clear image, and our AI will tell you what disease—if any—is present.</p>
+            <h3>Detectable Diseases</h3>
+            <ul>
+                <li>Anthracnose</li>
+                <li>Bacterial Canker</li>
+                <li>Sooty Mould</li>
+                <li>Powdery Mildew</li>
+                <li>Red Rust</li>
+                <li>Algal Leaf Spot</li>
+                <li>Leaf Gall</li>
+                <li>Dieback</li>
+                <li>Leaf Webber</li>
+                <li>Healthy</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const fileName = document.getElementById('fileName');
+            const imagePreview = document.getElementById('imagePreview');
+            const resultSection = document.getElementById('resultSection');
+            const prediction = document.getElementById('prediction');
+            const confidence = document.getElementById('confidence');
+            const diseaseInfo = document.getElementById('diseaseInfo');
+            const loader = document.getElementById('loader');
+
+            const diseaseInformation = {
+                'Anthracnose': `<h4>Anthracnose</h4><p>Caused by <em>Colletotrichum gloeosporioides</em>, affects young leaves and twigs.</p>`,
+                'Bacterial_Canker': `<h4>Bacterial Canker</h4><p>Caused by <em>Xanthomonas campestris</em>, creates water-soaked spots.</p>`,
+                'Sooty_Mould': `<h4>Sooty Mould</h4><p>Black fungal growth due to honeydew from insects like aphids and whiteflies.</p>`,
+                'Powdery_Mildew': `<h4>Powdery Mildew</h4><p>White, powdery fungal growth on leaves, common in humid conditions.</p>`,
+                'Red_Rust': `<h4>Red Rust</h4><p>Caused by algae <em>Cephaleuros virescens</em>, appears as reddish-orange patches.</p>`,
+                'Algal_Leaf_Spot': `<h4>Algal Leaf Spot</h4><p>Non-fungal disease caused by parasitic algae, appears as green/grey patches.</p>`,
+                'Leaf_Gall': `<h4>Leaf Gall</h4><p>Caused by mites, forming bubble-like swellings on leaves.</p>`,
+                'Dieback': `<h4>Dieback</h4><p>Twigs and branches dry back from tips, common in stressed mango trees.</p>`,
+                'Leaf_Webber': `<h4>Leaf Webber</h4><p>Insect pest that webs leaves together and feeds inside.</p>`,
+                'Healthy': `<h4>Healthy Mango Leaf</h4><p>No disease detected. Maintain good cultivation practices.</p>`
+            };
+
+            uploadBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    fileName.textContent = file.name;
+
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        imagePreview.src = event.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+
+                    uploadImage(file);
+                }
+            });
+
+            function uploadImage(file) {
+                loader.style.display = 'block';
+                resultSection.style.display = 'none';
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/predict/mango', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loader.style.display = 'none';
+                    resultSection.style.display = 'block';
+
+                    if (data.error) {
+                        prediction.textContent = `Error: ${data.error}`;
+                        confidence.style.display = 'none';
+                        diseaseInfo.style.display = 'none';
+                        resultSection.className = 'result-section result-disease';
+                    } else {
+                        prediction.textContent = `Prediction: ${data.prediction.replace(/_/g, ' ')}`;
+
+                        if (diseaseInformation[data.prediction]) {
+                            diseaseInfo.innerHTML = diseaseInformation[data.prediction];
+                            diseaseInfo.style.display = 'block';
+                        } else {
+                            diseaseInfo.style.display = 'none';
+                        }
+
+                        resultSection.className = data.prediction.includes('Healthy') ? 
+                            'result-section result-healthy' : 'result-section result-disease';
+                    }
+                })
+                .catch(error => {
+                    loader.style.display = 'none';
+                    resultSection.style.display = 'block';
+                    prediction.textContent = `Error: ${error}`;
+                    confidence.style.display = 'none';
+                    diseaseInfo.style.display = 'none';
+                    resultSection.className = 'result-section result-disease';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

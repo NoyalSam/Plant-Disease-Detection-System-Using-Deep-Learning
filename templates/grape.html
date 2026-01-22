@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grape Disease Detector</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f7ff;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #4b236b;
+            margin-bottom: 30px;
+        }
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .upload-section:hover {
+            border-color: #4b236b;
+        }
+        #fileInput {
+            display: none;
+        }
+        .upload-btn {
+            background-color: #4b236b;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 15px 0;
+            transition: background-color 0.3s ease;
+        }
+        .upload-btn:hover {
+            background-color: #371953;
+        }
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        .result-section {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result-healthy {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result-disease {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4b236b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0ebf8;
+            border-radius: 8px;
+        }
+        .info-section h3 {
+            color: #4b236b;
+            margin-top: 0;
+        }
+        .confidence {
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+        .disease-info {
+            text-align: left;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f5f5f5;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Grape Disease Detector</h1>
+
+        <div class="upload-section" id="dropZone">
+            <p>Upload a grape leaf image for disease detection</p>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="upload-btn" id="uploadBtn">Choose File</button>
+            <p id="fileName">No file chosen</p>
+            <img id="imagePreview" src="#" alt="Image Preview">
+            <div class="loader" id="loader"></div>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <h2>Analysis Result</h2>
+            <h3 id="prediction"></h3>
+            <p class="confidence" id="confidence"></p>
+            <div class="disease-info" id="diseaseInfo"></div>
+        </div>
+
+        <div class="info-section">
+            <h3>How It Works</h3>
+            <p>This tool uses a deep learning model trained to identify grape diseases from images. Simply upload a clear photo of a grape leaf, and our AI will analyze it to determine if it's healthy or identify potential diseases.</p>
+            <h3>Detectable Diseases</h3>
+            <ul>
+                <li><strong>Black Rot</strong> - Characterized by brown circular lesions</li>
+                <li><strong>Esca (Black Measles)</strong> - Shows reddish-brown patches between veins</li>
+                <li><strong>Leaf Blight (Isariopsis Leaf Spot)</strong> - Displays small, dark spots</li>
+                <li><strong>Healthy</strong> - Normal green leaf tissue</li>
+            </ul>
+            <h3>For Best Results</h3>
+            <ul>
+                <li>Use well-lit, clear images</li>
+                <li>Focus on the affected area of the leaf</li>
+                <li>Avoid shadows or glare</li>
+                <li>Use high-resolution images when possible</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const fileName = document.getElementById('fileName');
+            const imagePreview = document.getElementById('imagePreview');
+            const resultSection = document.getElementById('resultSection');
+            const prediction = document.getElementById('prediction');
+            const confidence = document.getElementById('confidence');
+            const diseaseInfo = document.getElementById('diseaseInfo');
+            const loader = document.getElementById('loader');
+
+            const diseaseInformation = {
+                'Black_rot': `<h4>Black Rot</h4>
+                              <p>Black rot is a fungal disease caused by <em>Guignardia bidwellii</em>. It affects leaves, shoots, berries, and stems.</p>
+                              <p><strong>Treatment:</strong> Apply fungicides, ensure proper pruning for air circulation, and remove infected plant parts.</p>`,
+                'Esca_(Black_Measles)': `<h4>Esca (Black Measles)</h4>
+                                         <p>Esca is a complex fungal disease affecting the wood of grapevines. It causes tiger-stripe patterns on leaves.</p>
+                                         <p><strong>Treatment:</strong> No effective chemical control exists. Practice good vineyard sanitation, remove infected vines, and use disease-free planting material.</p>`,
+                'Leaf_blight_(Isariopsis_Leaf_Spot)': `<h4>Leaf Blight (Isariopsis Leaf Spot)</h4>
+                                                       <p>Caused by the fungus <em>Pseudocercospora vitis</em>, this disease creates small, dark spots on leaves.</p>
+                                                       <p><strong>Treatment:</strong> Apply appropriate fungicides, improve air circulation with proper pruning, and practice good sanitation.</p>`,
+                'Healthy': `<h4>Healthy Grape Leaf</h4>
+                            <p>Your grape leaves appear healthy with no signs of disease. Continue with regular care practices.</p>
+                            <p><strong>Maintenance:</strong> Regular watering, proper fertilization, and preventative fungicide applications during the growing season.</p>`
+            };
+
+            uploadBtn.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    fileName.textContent = file.name;
+
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        imagePreview.src = event.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+
+                    uploadImage(file);
+                }
+            });
+
+            function uploadImage(file) {
+                loader.style.display = 'block';
+                resultSection.style.display = 'none';
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/predict/grape', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        loader.style.display = 'none';
+                        resultSection.style.display = 'block';
+
+                        if (data.error) {
+                            prediction.textContent = `Error: ${data.error}`;
+                            confidence.style.display = 'none';
+                            diseaseInfo.style.display = 'none';
+                            resultSection.className = 'result-section result-disease';
+                        } else {
+                            const label = data.prediction;
+                            prediction.textContent = `Prediction: ${label.replace(/_/g, ' ')}`;
+
+                            if (diseaseInformation[label]) {
+                                diseaseInfo.innerHTML = diseaseInformation[label];
+                                diseaseInfo.style.display = 'block';
+                            } else {
+                                diseaseInfo.style.display = 'none';
+                            }
+
+                            resultSection.className = label.includes('Healthy') ?
+                                'result-section result-healthy' :
+                                'result-section result-disease';
+                        }
+                    })
+                    .catch(error => {
+                        loader.style.display = 'none';
+                        resultSection.style.display = 'block';
+                        prediction.textContent = `Error: ${error}`;
+                        confidence.style.display = 'none';
+                        diseaseInfo.style.display = 'none';
+                        resultSection.className = 'result-section result-disease';
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Plant Disease Classifier</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --primary: #27ae60;
+      --primary-dark: #219150;
+      --text-dark: #2c3e50;
+      --text-light: #5d6d7e;
+      --shadow: 0 8px 20px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: url('https://images.unsplash.com/photo-1490750967868-88aa4486c946?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #333;
+      overflow-x: hidden;
+    }
+    
+    .overlay {
+      background: rgba(255, 255, 255, 0.94);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      background: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid #e1e1e1;
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    }
+    
+    nav h2 {
+      font-size: 1.8rem;
+      color: var(--text-dark);
+      position: relative;
+    }
+    
+    nav h2::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--primary);
+      transition: var(--transition);
+    }
+    
+    nav h2:hover::after {
+      width: 100%;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    
+    header {
+      margin-bottom: 40px;
+    }
+    
+    header h1 {
+      font-size: 3.5rem;
+      margin-bottom: 15px;
+      color: var(--text-dark);
+      animation: fadeInDown 1.2s;
+      background: linear-gradient(45deg, #2c3e50, #27ae60);
+      background-clip: text;           /* Add this line */
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .subtitle {
+      font-size: 1.3rem;
+      color: var(--text-light);
+      margin-bottom: 30px;
+      animation: fadeIn 1.5s;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Search Box */
+    .search-box {
+      margin-bottom: 50px;
+      animation: fadeInUp 1s;
+    }
+    
+    .search-box input {
+      padding: 14px 25px;
+      width: 350px;
+      border-radius: 30px;
+      border: 1px solid #ddd;
+      font-size: 1.1rem;
+      outline: none;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      background: rgba(255, 255, 255, 0.9);
+    }
+    
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(39, 174, 96, 0.25);
+      width: 380px;
+    }
+
+    /* Cards */
+    .card-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 40px;
+      margin-top: 30px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      width: 330px;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      text-decoration: none;
+      color: inherit;
+      opacity: 0;
+      transform: translateY(40px);
+      position: relative;
+      isolation: isolate;
+    }
+    
+    .card.visible {
+      animation: cardFadeIn 0.8s ease forwards;
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, rgba(39, 174, 96, 0.8), rgba(39, 174, 96, 0));
+      opacity: 0;
+      transition: var(--transition);
+      z-index: 1;
+      pointer-events: none;
+    }
+    
+    .card:hover {
+      transform: translateY(-15px) scale(1.02);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+    
+    .card:hover::before {
+      opacity: 0.2;
+    }
+    
+    .card-image {
+      height: 240px;
+      background-size: cover;
+      background-position: center;
+      transition: transform 1.5s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card:hover .card-image {
+      transform: scale(1.1);
+    }
+    
+    .grape-image {
+      background-image: url('https://wallpapers.com/images/featured/grape-8nwr7n8ikqh9e36t.jpg');
+    }
+    
+    .mango-image {
+      background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqcu2ASffiIQl6asQmPjniSM6nS8UpXYir6g&s');
+    }
+    
+    .tulsi-image {
+      background-image: url('https://media.istockphoto.com/id/1344301193/photo/holy-basil-tulsi-a-medicinal-plant-of-indian-origin.jpg?s=612x612&w=0&k=20&c=M_-5529SH7Bl6kkP-EcW6IxGTM3xynQczlAouXEoDxk=');
+    }
+    
+    .card-content {
+      padding: 30px 25px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .card-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .card-title::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      transition: var(--transition);
+    }
+    
+    .card:hover .card-title::after {
+      width: 100%;
+    }
+    
+    .card-description {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 25px;
+      line-height: 1.6;
+    }
+    
+    .card-button {
+      background: var(--primary);
+      color: white;
+      padding: 12px 26px;
+      border-radius: 50px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: 0.5s;
+    }
+    
+    .card-button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(39, 174, 96, 0.4);
+    }
+    
+    .card-button:hover::before {
+      left: 100%;
+    }
+    
+    .card-badge {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.9);
+      color: var(--primary);
+      padding: 6px 15px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      z-index: 3;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      animation: pulse 2s infinite;
+    }
+    
+    footer {
+      margin-top: 80px;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #555;
+      padding: 25px 0;
+      border-top: 1px solid #eee;
+    }
+    
+    .footer-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .footer-links {
+      margin: 20px 0;
+    }
+    
+    .footer-links a {
+      color: var(--text-dark);
+      margin: 0 15px;
+      text-decoration: none;
+      transition: var(--transition);
+    }
+    
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+    
+    .add-plant-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: var(--primary);
+      color: white;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      transition: var(--transition);
+      z-index: 10;
+      border: none;
+      font-size: 1.8rem;
+    }
+    
+    .add-plant-btn:hover {
+      transform: scale(1.1) rotate(90deg);
+      background: var(--primary-dark);
+    }
+    
+    /* New Feature: Stats Section */
+    .stats-section {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin: 60px auto;
+      max-width: 800px;
+      opacity: 0;
+    }
+    
+    .stats-section.visible {
+      animation: fadeInUp 1s forwards;
+    }
+    
+    .stat-item {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      width: 200px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-item:hover {
+      transform: translateY(-8px);
+    }
+    
+    .stat-item::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--primary);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.5s ease;
+    }
+    
+    .stat-item:hover::after {
+      transform: scaleX(1);
+    }
+    
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #accuracyCounter::after {
+      content: '%';
+      font-size: 1.4rem;
+      margin-left: 2px;
+      opacity: 0.8;
+    }
+    
+    .stat-label {
+      font-size: 1rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+    
+    /* New Feature: Info Bar */
+    .info-bar {
+      background: linear-gradient(90deg, #f9f9f9, #ffffff);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+      animation: slideInDown 1s;
+    }
+    
+    .info-message {
+      display: flex;
+      align-items: center;
+      font-size: 0.95rem;
+      color: var(--text-light);
+    }
+    
+    .info-icon {
+      margin-right: 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+    
+    /* New Feature: Scroll Indicator */
+    .scroll-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: var(--primary);
+      z-index: 9999;
+      width: 0%;
+      transition: width 0.1s;
+    }
+    
+    /* Animations */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes cardFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(39, 174, 96, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(39, 174, 96, 0);
+      }
+    }
+    
+    @keyframes slideInDown {
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes floatAnimation {
+      0% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+      100% {
+        transform: translateY(0px);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .card-container {
+        gap: 20px;
+      }
+      .card {
+        width: 100%;
+        max-width: 350px;
+      }
+      .stats-section {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      .stat-item {
+        width: 80%;
+      }
+      .search-box input {
+        width: 90%;
+      }
+      .search-box input:focus {
+        width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Scroll Progress Indicator -->
+  <div class="scroll-indicator" id="scrollIndicator"></div>
+
+  <div class="overlay">
+    <nav>
+      <h2>AgriAI Classifier</h2>
+    </nav>
+
+    <div class="container">
+      <header>
+        <h1>Plant Disease Classifier</h1>
+        <p class="subtitle">Select a plant type to detect and diagnose diseases using our advanced deep learning algorithm. Upload photos and get instant analysis.</p>
+      </header>
+
+      <!-- Info Bar -->
+      <!-- <div class="info-bar">
+        <div class="info-message">
+          <span class="info-icon">ℹ️</span>
+          <span>New feature: Now with 98% accuracy for grape disease detection!</span>
+        </div>
+      </div> -->
+
+      <!-- Search -->
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search for a plant..." onkeyup="filterCards()">
+      </div>
+
+      <!-- Stats Section -->
+      <div class="stats-section" id="statsSection">
+        <div class="stat-item">
+          <div class="stat-number" id="diseaseCounter">0</div>
+          <div class="stat-label">Diseases Detected</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="accuracyCounter">0</div>
+          <div class="stat-label">% Accuracy</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="plantCounter">0</div>
+          <div class="stat-label">Plant Types</div>
+        </div>
+      </div>
+
+      <div class="card-container" id="cardContainer">
+        <!-- Grape -->
+        <a href="/grape" class="card" data-category="fruit">
+          <div class="card-badge">Popular</div>
+          <div class="card-image grape-image"></div>
+          <div class="card-content">
+            <h2 class="card-title">Grape Classifier</h2>
+            <p class="card-description">Detect diseases in grape leaves and receive insights for vineyard health. Supports multiple grape varieties.</p>
+            <button class="card-button">Select Grape</button>
+          </div>
+        </a>
+
+        <!-- Mango -->
+        <a href="/mango" class="card" data-category="fruit">
+          <div class="card-image mango-image"></div>
+          <div class="card-content">
+            <h2 class="card-title">Mango Classifier</h2>
+            <p class="card-description">Diagnose mango leaf diseases to improve yield and fruit quality. Get treatment recommendations.</p>
+            <button class="card-button">Select Mango</button>
+          </div>
+        </a>
+
+        <!-- Tulsi -->
+        <a href="/tulsi" class="card" data-category="herb">
+          <div class="card-badge">New</div>
+          <div class="card-image tulsi-image"></div>
+          <div class="card-content">
+            <h2 class="card-title">Tulsi Classifier</h2>
+            <p class="card-description">Identify health issues in tulsi plants and protect their medicinal value. Compare with healthy samples.</p>
+            <button class="card-button">Select Tulsi</button>
+          </div>
+        </a>
+      </div>
+
+      <!-- Add New Plant Button -->
+      <button class="add-plant-btn" id="addPlantBtn">+</button>
+
+      <footer>
+        <div class="footer-content">
+          <p>© 2025 AgriAI | Advancing Sustainable Farming Through Technology</p>
+          <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+            <a href="#">Contact</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Scroll Indicator
+    window.addEventListener('scroll', function() {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById("scrollIndicator").style.width = scrolled + "%";
+    });
+
+    // Intersection Observer for animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    // Observe all cards
+    document.querySelectorAll('.card').forEach(card => {
+      observer.observe(card);
+    });
+
+    // Observe stats section
+    observer.observe(document.getElementById('statsSection'));
+
+    // Search functionality
+    function filterCards() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const cards = document.querySelectorAll(".card");
+
+      cards.forEach(card => {
+        const title = card.querySelector(".card-title").innerText.toLowerCase();
+        const description = card.querySelector(".card-description").innerText.toLowerCase();
+        const isMatch = title.includes(input) || description.includes(input);
+        
+        if (isMatch) {
+          card.style.display = "block";
+          card.classList.add("animate__animated", "animate__fadeIn");
+        } else {
+          card.style.display = "none";
+        }
+      });
+    }
+
+    // Counter Animation
+    function animateCounter(elementId, targetValue, duration) {
+      const element = document.getElementById(elementId);
+      const startValue = 0;
+      const increment = targetValue / (duration / 16);
+      let currentValue = startValue;
+      
+      const timer = setInterval(() => {
+        currentValue += increment;
+        if (currentValue >= targetValue) {
+          clearInterval(timer);
+          currentValue = targetValue;
+        }
+        element.textContent = Math.floor(currentValue);
+      }, 16);
+    }
+
+    // Start counters when stats section becomes visible
+    const statsObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        animateCounter("diseaseCounter", 15, 1500);
+        animateCounter("accuracyCounter", 98, 1700);
+        animateCounter("plantCounter", 3, 1900);
+        statsObserver.disconnect();
+      }
+    });
+    statsObserver.observe(document.getElementById('statsSection'));
+
+    // Add Plant Button Animation
+    const addPlantBtn = document.getElementById('addPlantBtn');
+    addPlantBtn.addEventListener('click', function() {
+      alert('Coming soon: Add your own plant type for classification!');
+    });
+    
+    // Add hover effects dynamically
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        this.querySelector('.card-image').style.animation = 'none';
+        this.querySelector('.card-button').style.animation = 'pulse 2s infinite';
+      });
+      
+      card.addEventListener('mouseleave', function() {
+        this.querySelector('.card-button').style.animation = 'none';
+      });
+    });
+  </script>
+</body>
+</html>
