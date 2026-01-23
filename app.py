@@ -54,9 +54,6 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
-
-# # --- Dataset Paths ---
-# GRAPE_DATASET_PATH = r"C:\Users\Lenovo\OneDrive\Desktop\collab\Dataset"
 # --- Dataset Paths ---
 GRAPE_DATASET_PATH = "Dataset/Grape"
 MANGO_DATASET_PATH = "Dataset/Mango"
@@ -66,12 +63,6 @@ TULSI_DATASET_PATH = "Dataset/Tulsi"
 GRAPE_MODEL_PATH = "grape_final_model.pth"
 MANGO_MODEL_PATH = "mango_leaf_disease_cnn6.pth"
 TULSI_MODEL_PATH = "tul_leaf_disease_cnn.pth"
-
-
-# # --- Model Paths ---
-# GRAPE_MODEL_PATH = "grape_final_model.pth"
-# MANGO_MODEL_PATH = "mango_leaf_disease_cnn6.pth"
-# TULSI_MODEL_PATH = "tul_leaf_disease_cnn.pth"
 
 # --- Class Labels ---
 try:
@@ -83,18 +74,7 @@ except Exception as e:
 MANGO_CLASSES = ['Anthracnose', 'Bacterial Canker', 'Cutting Weevil', 'Die Back',
                  'Gall Midge', 'Healthy', 'Powdery Mildew', 'Sooty Mould']
 
-# TULSI_CLASSES = ['bacterial', 'fungal', 'healthy', 'pests']
-TULSI_CLASSES = [
-    'bacterial',
-    'fungal',
-    'healthy',
-    'pests',
-    'class5',
-    'class6',
-    'class7',
-    'class8'
-]
-
+TULSI_CLASSES = ['bacterial','fungal','healthy','pests','class5','class6','class7','class8']
 
 # --- Routes ---
 @app.route("/")
