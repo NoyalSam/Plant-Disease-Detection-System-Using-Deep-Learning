@@ -1,4 +1,4 @@
-# 🌿 Plant Disease Detection System Using Deep Learning
+# 🌿 Plant Disease Detection System Using Deep Learning 
 
 A **deep learning–based web application** for detecting plant leaf diseases using **PyTorch CNN models** and a **Flask** backend. The system allows users to upload leaf images and instantly receive disease predictions, supporting **smart and precision agriculture**.
 
